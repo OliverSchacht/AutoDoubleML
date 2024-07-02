@@ -4,6 +4,8 @@ from sklearn.dummy import DummyRegressor, DummyClassifier
 import warnings
 import numpy as np
 
+from autodml._utils import assert_time
+
 class AutoDoubleMLIRM(DoubleMLIRM):
     def __init__(self,
                  obj_dml_data,
@@ -28,36 +30,20 @@ class AutoDoubleMLIRM(DoubleMLIRM):
                          trimming_rule='truncate',
                          trimming_threshold=1e-2,
                          draw_sample_splitting=True)
-
-        if not (isinstance(time, int) or time is None):
-            raise TypeError(f'time has to be of type int or None. \
-                              {type(time)} was provided.')
-        if isinstance(time, int) and time<0:
-            raise ValueError(f'time has to be positive. \
-                              {time} was provided')
-        if time is None:
-            time=180
-            warnings.warn(f'No optimization time provided. Using default time.')
-        if not isinstance(framework, str):
-            raise TypeError(f'framework has to be of type string. \
-                             {type(framework)} was provided.')
-        if not framework in ["flaml"]:
-            raise ValueError(f'Currently only framework "flaml" is supported \
-                              but {framework} was provided')
-        if score=="IV-type":
-            raise NotImplementedError('Currently only "partialling out" is supported')
         
+        time = assert_time(time, self.params_names)
         self.time = time
 
         self.task_g = "classification" if self._dml_data.binary_outcome else "regression"
+
         if framework == "flaml":
-            self.automl_g0 = AutoML(time_budget=self.time / 3,
+            self.automl_g0 = AutoML(time_budget=self.time['ml_g0'],
                                     metric='rmse',  
                                     task=self.task_g)
-            self.automl_g1 = AutoML(time_budget=self.time / 3,
+            self.automl_g1 = AutoML(time_budget=self.time['ml_g1'],
                                     metric='rmse',  
                                     task=self.task_g)
-            self.automl_m = AutoML(time_budget=self.time / 3,
+            self.automl_m = AutoML(time_budget=self.time['ml_m'],
                                    metric='rmse',  
                                    task="classification")
 

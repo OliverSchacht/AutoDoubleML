@@ -3,6 +3,8 @@ from doubleml import DoubleMLPLR
 from sklearn.dummy import DummyRegressor
 import warnings
 
+from autodml._utils import assert_time
+
 class AutoDoubleMLPLR(DoubleMLPLR):
     def __init__(self,
                  obj_dml_data,
@@ -19,34 +21,16 @@ class AutoDoubleMLPLR(DoubleMLPLR):
                          n_rep=1,
                          score='partialling out',
                          draw_sample_splitting=True)
-
-        if not (isinstance(time, int) or time is None):
-            raise TypeError(f'time has to be of type int or None. \
-                              {type(time)} was provided.')
-        if isinstance(time, int) and time<0:
-            raise ValueError(f'time has to be positive. \
-                              {time} was provided')
-        if time is None:
-            time=120
-            warnings.warn(f'No optimization time provided. Using default time.')
-        if not isinstance(framework, str):
-            raise TypeError(f'framework has to be of type string. \
-                             {type(framework)} was provided.')
-        if not framework in ["flaml"]:
-            raise ValueError(f'Currently only framework "flaml" is supported \
-                              but {framework} was provided')
-        if score=="IV-type":
-            raise NotImplementedError('Currently only "partialling out" is supported')
-
         
+        time = assert_time(time, self.params_names)
         self.time = time
 
         self.task_m = "classification" if self._dml_data.binary_treats.all() else "regression"
         if framework == "flaml":
-            self.automl_l = AutoML(time_budget=self.time / 2,
+            self.automl_l = AutoML(time_budget=self.time['ml_l'],
                                    metric='rmse',  
                                    task='regression')
-            self.automl_m = AutoML(time_budget=self.time / 2,
+            self.automl_m = AutoML(time_budget=self.time['ml_m'],
                                    metric='rmse',  
                                    task=self.task_m)
 
