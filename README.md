@@ -1,5 +1,7 @@
 ## AutoDoubleML
 
+See a demo example at [example.ipynb](example.ipynb)
+
 #### Clone Git Repo
 
 ```{bash}
