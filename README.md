@@ -1,5 +1,30 @@
-# AutoDoubleML
+## AutoDoubleML
 
-This is currently a playground to evaluate possibilities of automating the DoubleML learner selection and tuning.
+#### Clone Git Repo
 
-See 'example.ipynb' for an example.
+```{bash}
+git clone https://github.com/OliverSchacht/AutoDoubleML
+```
+
+#### Install requirements
+
+```{bash}
+pip install requirements.txt
+```
+
+#### Pip install local package
+
+```{bash}
+pip install .
+```
+
+#### Use package 
+
+```{python}
+import autodml
+```
+or import a single class only
+
+```{python}
+from autodml.AutoDoubleMLPLR import AutoDoubleMLPLR
+```
