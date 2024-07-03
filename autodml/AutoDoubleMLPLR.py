@@ -17,13 +17,22 @@ class AutoDoubleMLPLR(DoubleMLPLR):
         super().__init__(obj_dml_data,
                          ml_m=DummyRegressor(),
                          ml_l=DummyRegressor(),
-                         n_folds=5,
-                         n_rep=1,
-                         score='partialling out',
-                         draw_sample_splitting=True)
+                         n_folds=n_folds,
+                         n_rep=n_rep,
+                         score=score,
+                         draw_sample_splitting=draw_sample_splitting)
         
         time = assert_time(time, self.params_names)
         self.time = time
+
+        if not isinstance(framework, str):
+            raise TypeError(f'framework has to be of type string. \
+                             {type(framework)} was provided.')
+        if not framework in ["flaml"]:
+            raise ValueError(f'Currently only framework "flaml" is supported \
+                              but {framework} was provided')
+        if score=="IV-type":
+            raise NotImplementedError('Currently only "partialling out" is supported') 
 
         self.task_m = "classification" if self._dml_data.binary_treats.all() else "regression"
         if framework == "flaml":
