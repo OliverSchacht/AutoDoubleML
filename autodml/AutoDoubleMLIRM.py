@@ -1,7 +1,6 @@
 from flaml import AutoML
 from doubleml import DoubleMLIRM
 from sklearn.dummy import DummyRegressor, DummyClassifier
-import warnings
 import numpy as np
 
 from autodml._utils import assert_time
@@ -34,14 +33,16 @@ class AutoDoubleMLIRM(DoubleMLIRM):
         time = assert_time(time, self.params_names)
         self.time = time
 
+        if score == "ATTE":
+            self.time["ml_g0"] += self.time["ml_g1"]
+            self.time["ml_g1"] = 0
+
         if not isinstance(framework, str):
             raise TypeError(f'framework has to be of type string. \
                              {type(framework)} was provided.')
         if not framework in ["flaml"]:
             raise ValueError(f'Currently only framework "flaml" is supported \
                               but {framework} was provided')
-        if score=="IV-type":
-            raise NotImplementedError('Currently only "partialling out" is supported') 
 
         self.task_g = "classification" if self._dml_data.binary_outcome else "regression"
 
@@ -56,10 +57,10 @@ class AutoDoubleMLIRM(DoubleMLIRM):
                                    metric='rmse',  
                                    task="classification")
 
-    def fit(self):
+    def fit(self, n_jobs_cv=None, store_models=False):
         learners_info = ', '.join([f"{learner} for {duration}s" for learner, duration in self.time.items()])
         print(f"Optimizing learners: {learners_info}. Please wait.")
-        
+
         treat_idx = (self._dml_data.d == 1)
         self.automl_g0.fit(X_train=np.c_[self._dml_data.x, self._dml_data.d][~treat_idx],
                            y_train=self._dml_data.y[~treat_idx], verbose=0)
@@ -72,6 +73,7 @@ class AutoDoubleMLIRM(DoubleMLIRM):
                          'ml_m': self.automl_m.model.estimator}
         if self.task_g == "classification":
             self._predict_method['ml_g'] = 'predict_proba'
-        self.set_ml_nuisance_params("ml_g1", "d", self.automl_g1.model.estimator.get_params())
-        _fit  = super().fit()
+        if self.score == "ATE":
+            self.set_ml_nuisance_params("ml_g1", "d", self.automl_g1.model.estimator.get_params())
+        _fit  = super().fit(n_jobs_cv=n_jobs_cv, store_models=store_models)
         return _fit
