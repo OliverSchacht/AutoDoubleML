@@ -57,7 +57,9 @@ class AutoDoubleMLIRM(DoubleMLIRM):
                                    task="classification")
 
     def fit(self):
-        print(f"Optimizing learners for {self.time}s. Please wait.")
+        learners_info = ', '.join([f"{learner} for {duration}s" for learner, duration in self.time.items()])
+        print(f"Optimizing learners: {learners_info}. Please wait.")
+        
         treat_idx = (self._dml_data.d == 1)
         self.automl_g0.fit(X_train=np.c_[self._dml_data.x, self._dml_data.d][~treat_idx],
                            y_train=self._dml_data.y[~treat_idx], verbose=0)
