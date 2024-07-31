@@ -6,13 +6,13 @@ def assert_time(time, params_names):
                               {type(time)} was provided.')
     if time is None:
         time = 60
+        warnings.warn(f'No optimization time provided. Using default time. Time is equally split to all.')
     
     if isinstance(time, int):
         if time<0:
             raise ValueError(f'time has to be positive. \
                                 {time} was provided')
         time = {key: int(time/len(params_names)) for key in params_names}
-        warnings.warn(f'No optimization time provided. Using default time. Time is equally split to all .')
     
     else:
         if not all(key in time.keys() for key in params_names):
