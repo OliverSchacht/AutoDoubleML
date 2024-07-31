@@ -67,6 +67,8 @@ class AutoDoubleMLPLR(DoubleMLPLR):
         if self._score == "IV-type":
             m_hat = cross_val_predict(self.automl_m.model.estimator, x, d,
                                       method=self._predict_method['ml_m'], cv=self.n_folds, n_jobs=n_jobs_cv)
+            if self.task_m == "classification":
+                m_hat = m_hat[:,1]
             l_hat = cross_val_predict(self.automl_l.model.estimator, x, y,
                                       cv=self.n_folds, n_jobs=n_jobs_cv)
             
