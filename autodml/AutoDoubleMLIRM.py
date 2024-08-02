@@ -6,6 +6,63 @@ import numpy as np
 from autodml._utils import assert_time
 
 class AutoDoubleMLIRM(DoubleMLIRM):
+    """Automated double machine learning for interactive regression models
+
+    Parameters
+    ----------
+    obj_dml_data : :class:`DoubleMLData` object
+        The :class:`DoubleMLData` object providing the data and specifying the variables for the causal model.
+
+    n_folds : int
+        Number of folds.
+        Default is ``5``.
+
+    n_rep : int
+        Number of repetitons for the sample splitting.
+        Default is ``1``.
+
+    score : str or callable
+        A str (``'ATE'`` or ``'ATTE'``) specifying the score function
+        or a callable object / function with signature ``psi_a, psi_b = score(y, d, g_hat0, g_hat1, m_hat, smpls)``.
+        Default is ``'ATE'``.
+
+    weights : array, dict or None
+        An numpy array of weights for each individual observation. If None, then the ``'ATE'`` score
+        is applied (corresponds to weights equal to 1). Can only be used with ``score = 'ATE'``.
+        An array has to be of shape ``(n,)``, where ``n`` is the number of observations.
+        A dictionary can be used to specify weights which depend on the treatment variable.
+        In this case, the dictionary has to contain two keys ``weights`` and ``weights_bar``, where the values
+        have to be arrays of shape ``(n,)`` and ``(n, n_rep)``.
+        Default is ``None``.
+
+    normalize_ipw : bool
+        Indicates whether the inverse probability weights are normalized.
+        Default is ``False``.
+
+    trimming_rule : str
+        A str (``'truncate'`` is the only choice) specifying the trimming approach.
+        Default is ``'truncate'``.
+
+    trimming_threshold : float
+        The threshold used for trimming.
+        Default is ``1e-2``.
+
+    draw_sample_splitting : bool
+        Indicates whether the sample splitting should be drawn during initialization of the object.
+        Default is ``True``.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import autodoubleml as adml
+    >>> from doubleml.datasets import make_irm_data
+    >>> np.random.seed(3141)
+    >>> obj_dml_data = make_irm_data(theta=0.5, n_obs=500, dim_x=20)
+    >>> adml_irm_obj = adml.AutoDoubleMLIRM(obj_dml_data, time=30)
+    >>> adml_irm_obj.fit().summary
+           coef  std err          t         P>|t|     2.5 %    97.5 %
+    d  0.598036   0.0497  12.032832  2.388268e-33  0.500625  0.695447
+    """
     def __init__(self,
                  obj_dml_data,
                  framework='flaml',
@@ -58,6 +115,25 @@ class AutoDoubleMLIRM(DoubleMLIRM):
                                    task="classification")
 
     def fit(self, n_jobs_cv=None, store_models=False):
+        """
+        Estimate AutoDoubleML models. Runs Hyperparameter Optimization for given time and then runs DoubleML.
+
+        Parameters
+        ----------
+        n_jobs_cv : None or int
+            The number of CPUs to use to fit the learners. ``None`` means ``1``.
+            Default is ``None``.
+
+        store_models : bool
+            Indicates whether the fitted models for the nuisance functions should be stored in ``models``. This allows
+            to analyze the fitted models or extract information like variable importance.
+            Default is ``False``.
+
+        Returns
+        -------
+        self : object
+        """
+                
         learners_info = ', '.join([f"{learner} for {duration}s" for learner, duration in self.time.items()])
         print(f"Optimizing learners: {learners_info}. Please wait.")
 
