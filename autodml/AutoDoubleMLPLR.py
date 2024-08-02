@@ -148,3 +148,10 @@ class AutoDoubleMLPLR(DoubleMLPLR):
         _fit  = super().fit(n_jobs_cv=n_jobs_cv, 
                             store_models=store_models)
         return _fit
+    
+    def evaluate_tuning(self):
+        if self.nuisance_targets is None:
+                raise ValueError('Apply fit() before evaluate_learners().')
+        
+        return {"ml_l": self.automl_l.best_loss,
+                "ml_m": self.automl_m.best_loss}
