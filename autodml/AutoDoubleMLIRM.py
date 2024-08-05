@@ -74,7 +74,8 @@ class AutoDoubleMLIRM(DoubleMLIRM):
                  normalize_ipw=False,
                  trimming_rule='truncate',
                  trimming_threshold=1e-2,
-                 draw_sample_splitting=True):
+                 draw_sample_splitting=True,
+                 automl_config=None):
         super().__init__(obj_dml_data,
                          ml_m=DummyClassifier(),
                          ml_g=DummyRegressor(),
@@ -100,19 +101,26 @@ class AutoDoubleMLIRM(DoubleMLIRM):
         if not framework in ["flaml"]:
             raise ValueError(f'Currently only framework "flaml" is supported \
                               but {framework} was provided')
+        if automl_config is not None:
+            if not isinstance(automl_config, dict):
+                raise TypeError(f'automl_config has to be a dict or None. \
+                                 {type(framework)} was provided.')
+            if not set(automl_config.keys()).issubset(self.params_names):
+                raise KeyError(f'automl_config must not contain keys other than {self.params_names}. \
+                                 Found keys {automl_config.keys()}')
 
         self.task_g = "classification" if self._dml_data.binary_outcome else "regression"
 
         if framework == "flaml":
             self.automl_g0 = AutoML(time_budget=self.time['ml_g0'],
                                     metric='rmse',  
-                                    task=self.task_g)
+                                    task=self.task_g, **automl_config.get("ml_g0", {}))
             self.automl_g1 = AutoML(time_budget=self.time['ml_g1'],
                                     metric='rmse',  
-                                    task=self.task_g)
+                                    task=self.task_g, **automl_config.get("ml_g1", {}))
             self.automl_m = AutoML(time_budget=self.time['ml_m'],
                                    metric='rmse',  
-                                   task="classification")
+                                   task="classification", **automl_config.get("ml_m", {}))
 
     def fit(self, n_jobs_cv=None, store_models=False):
         """

@@ -60,7 +60,8 @@ class AutoDoubleMLPLR(DoubleMLPLR):
                  n_folds=5,
                  n_rep=1,
                  score='partialling out',
-                 draw_sample_splitting=True):
+                 draw_sample_splitting=True,
+                 automl_config=None):
         super().__init__(obj_dml_data,
                          ml_m=DummyRegressor(),
                          ml_l=DummyRegressor(),
@@ -79,20 +80,27 @@ class AutoDoubleMLPLR(DoubleMLPLR):
         if not framework in ["flaml"]:
             raise ValueError(f'Currently only framework "flaml" is supported \
                               but {framework} was provided')
+        if automl_config is not None:
+            if not isinstance(automl_config, dict):
+                raise TypeError(f'automl_config has to be a dict or None. \
+                                 {type(framework)} was provided.')
+            if not set(automl_config.keys()).issubset(self.params_names):
+                raise KeyError(f'automl_config must not contain keys other than {self.params_names}. \
+                                 Found keys {automl_config.keys()}')
         
         self.task_m = "classification" if self._dml_data.binary_treats.all() else "regression"
 
         if framework == "flaml":
             self.automl_l = AutoML(time_budget=self.time['ml_l'],
-                                   metric='rmse',  
-                                   task='regression')
+                                   metric='rmse',
+                                   task='regression', **automl_config.get("ml_l", {}))
             self.automl_m = AutoML(time_budget=self.time['ml_m'],
-                                   metric='rmse',  
-                                   task=self.task_m)
+                                   metric='rmse', 
+                                   task=self.task_m, **automl_config.get("ml_m", {}))
             if score=="IV-type":
                 self.automl_g = AutoML(time_budget=self.time['ml_g'],
                                     metric='rmse',  
-                                    task='regression')
+                                    task='regression', **automl_config.get("ml_g", {}))
 
     def fit(self, n_jobs_cv=None, store_models=False):
         """
